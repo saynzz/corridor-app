@@ -1,0 +1,34 @@
+{
+  "name": "corridor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Corridor — an AI money agent for international students (FinTechathon 2026, International Track, Topic C)",
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "typecheck": "tsc --noEmit",
+    "reset": "tsx scripts/reset.ts",
+    "eval": "tsx scripts/eval.ts",
+    "check-llm": "tsx scripts/check-llm.ts"
+  },
+  "dependencies": {
+    "@fontsource/geist": "5.3.0",
+    "@fontsource/geist-mono": "5.2.7",
+    "@fontsource/instrument-serif": "5.2.8",
+    "next": "15.5.27",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "fsevents@2.3.3": true
+  }
+}

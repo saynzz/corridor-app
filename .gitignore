@@ -1,0 +1,9 @@
+node_modules
+.next
+.env
+.env.local
+data/bank.json
+reports/runs
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
