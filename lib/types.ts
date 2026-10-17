@@ -1,5 +1,5 @@
-export type Currency = "SGD" | "KZT" | "USD" | "CNY";
-export const CURRENCIES: Currency[] = ["SGD", "KZT", "USD", "CNY"];
+export type Currency = "SGD" | "IDR" | "USD" | "CNY";
+export const CURRENCIES: Currency[] = ["SGD", "IDR", "USD", "CNY"];
 
 export interface Wallet {
   currency: Currency;
@@ -98,6 +98,8 @@ export interface AuditEntry {
   tier?: number;
   outcome: "ok" | "blocked" | "needs_confirmation" | "error" | "flagged";
   detail: string;
+  prev?: string;
+  hash?: string;
 }
 
 export interface CreditStep {
@@ -154,7 +156,16 @@ export type Card =
   | { type: "blocked"; reason: string; checks: Check[] }
   | { type: "risk"; level: "low" | "medium" | "high"; flags: string[]; codes?: string[]; advice: string }
   | { type: "alert"; text: string }
-  | { type: "credit"; steps: CreditStep[] };
+  | { type: "credit"; steps: CreditStep[] }
+  | {
+      type: "case";
+      obligation: { amount: number; reference: string; dueDate: string } | null;
+      status: Record<string, string | boolean>;
+      funding?: { reserve: number; available: number; contribution: number; topup: number } | null;
+      routes?: { routeId: string; name: string; feasible: boolean; reason?: string; detail?: string; debitIdr: number; netSgd: number; postingDate: string }[];
+      next?: string;
+      whatIf?: boolean;
+    };
 
 export interface ChatTurn {
   role: "user" | "assistant";

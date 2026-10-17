@@ -1,0 +1,250 @@
+1
+00:00:00,200 --> 00:00:04,714
+International students often pay tuition
+with money from two places:
+
+2
+00:00:04,764 --> 00:00:08,608
+their own savings abroad and a top-up from
+family at home.
+
+3
+00:00:08,658 --> 00:00:13,910
+Corridor is an AI money agent that turns
+one tuition invoice into one verified,
+
+4
+00:00:13,960 --> 00:00:18,877
+approved and tracked payment, and it never
+moves money without the owner's
+
+5
+00:00:18,927 --> 00:00:19,750
+confirmation.
+
+6
+00:00:20,200 --> 00:00:23,077
+Putri studies in Singapore.
+
+7
+00:00:23,127 --> 00:00:31,860
+She takes her invoice from the university
+portal and gives consent for one check.
+
+8
+00:00:31,910 --> 00:00:39,775
+Corridor verifies the university's digital
+signature over the exact file:
+
+9
+00:00:39,825 --> 00:00:40,425
+VALID.
+
+10
+00:00:40,475 --> 00:00:48,340
+An edited amount, another student's
+invoice or an unknown issuer would be
+
+11
+00:00:48,390 --> 00:00:49,750
+stopped here.
+
+12
+00:00:50,200 --> 00:00:57,329
+Putri has 3,120 Singapore dollars and
+keeps 1,500 for rent and food.
+
+13
+00:00:57,379 --> 00:01:05,037
+So she can contribute 1,620, and her
+father Budi needs to add exactly 379
+
+14
+00:01:05,087 --> 00:01:06,198
+dollars 60.
+
+15
+00:01:06,248 --> 00:01:14,750
+Paying everything herself is rejected,
+because it would break her living reserve.
+
+16
+00:01:15,200 --> 00:01:19,913
+Corridor compares four routes from rupiah.
+
+17
+00:01:19,963 --> 00:01:25,584
+Route A is cheaper but arrives after the
+deadline.
+
+18
+00:01:25,634 --> 00:01:31,821
+Route C is the cheapest but arrives five
+dollars short.
+
+19
+00:01:31,871 --> 00:01:34,316
+Route D hides its fee.
+
+20
+00:01:34,366 --> 00:01:42,935
+Route B costs 4,725,000 rupiah, fits
+Budi's limit and posts on time with the
+
+21
+00:01:42,985 --> 00:01:44,750
+required buffer.
+
+22
+00:01:45,200 --> 00:01:50,827
+Each person approves only their own money.
+
+23
+00:01:50,877 --> 00:02:00,828
+Budi signs in with his own PIN and
+approves only the rupiah debit from his
+
+24
+00:02:00,878 --> 00:02:01,909
+account.
+
+25
+00:02:01,959 --> 00:02:08,397
+Putri approves the tuition payment with
+Face ID.
+
+26
+00:02:08,447 --> 00:02:14,344
+Both approvals are bound to the plan's
+hash:
+
+27
+00:02:14,394 --> 00:02:19,750
+if anything changes, they are cancelled.
+
+28
+00:02:20,200 --> 00:02:27,851
+Execution uses idempotency keys, so a
+retry can never pay twice.
+
+29
+00:02:27,901 --> 00:02:33,386
+The top-up settles, then the tuition
+transfer.
+
+30
+00:02:33,436 --> 00:02:35,913
+But sent is not paid:
+
+31
+00:02:35,963 --> 00:02:44,937
+the case completes only when the
+university posts the payment with a signed
+
+32
+00:02:44,987 --> 00:02:45,659
+event.
+
+33
+00:02:45,709 --> 00:02:49,750
+Putri keeps exactly 1,500 dollars.
+
+34
+00:02:50,200 --> 00:02:54,531
+Putri can also ask in her own language.
+
+35
+00:02:54,581 --> 00:03:03,068
+In Bahasa Indonesia, the agent explains
+where her payment is, using the same
+
+36
+00:03:03,118 --> 00:03:04,640
+verified case.
+
+37
+00:03:04,690 --> 00:03:13,964
+It can read, explain and draft, but it has
+no tool to approve, add payees or change
+
+38
+00:03:14,014 --> 00:03:14,750
+limits.
+
+39
+00:03:15,200 --> 00:03:16,959
+Here is a scam:
+
+40
+00:03:17,009 --> 00:03:26,606
+a fake landlord asks her to pay a new
+account, with a hidden instruction for the
+
+41
+00:03:26,656 --> 00:03:27,812
+assistant.
+
+42
+00:03:27,862 --> 00:03:36,856
+The policy layer marks the turn as
+untrusted and refuses any payment draft,
+
+43
+00:03:36,906 --> 00:03:39,750
+whatever the model says.
+
+44
+00:03:40,200 --> 00:03:44,424
+The operator console simulates real
+failures:
+
+45
+00:03:44,474 --> 00:03:50,408
+a revoked invoice, a lost provider
+response, a failed transfer.
+
+46
+00:03:50,458 --> 00:03:56,297
+The case blocks, reconciles or re-plans,
+and never pays twice.
+
+47
+00:03:56,347 --> 00:04:03,800
+If the AI model goes down, a labelled
+simplified mode keeps answering read-only
+
+48
+00:04:03,850 --> 00:04:04,750
+questions.
+
+49
+00:04:05,200 --> 00:04:15,474
+Every action goes into a hash-chained
+audit log anchored to a ledger.
+
+50
+00:04:15,524 --> 00:04:24,750
+If anyone edits a single entry, the Shield
+tab shows TAMPERED.
+
+51
+00:04:25,200 --> 00:04:29,941
+We test all of this with one command:
+
+52
+00:04:29,991 --> 00:04:39,910
+95 automated tests across agent tasks,
+attacks, policy bypass, tuition cases,
+
+53
+00:04:39,960 --> 00:04:44,183
+model outage and audit integrity.
+
+54
+00:04:44,233 --> 00:04:45,348
+Corridor:
+
+55
+00:04:45,398 --> 00:04:49,750
+money that moves with you, safely.
+

@@ -1,6 +1,11 @@
 import { loadEnv } from "./env";
 loadEnv();
-import("../lib/store").then(({ reset }) => {
+(async () => {
+  const { reset } = await import("../lib/store");
+  const { resetCase } = await import("../lib/case/engine");
+  const { resetLedger } = await import("../lib/anchor");
   reset();
-  console.log("Sandbox bank reset to demo data.");
-});
+  resetCase();
+  resetLedger();
+  console.log("Sandbox bank and tuition case reset to demo data.");
+})();

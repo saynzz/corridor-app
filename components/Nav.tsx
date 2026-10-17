@@ -6,8 +6,9 @@ import { useI18n } from "./i18n";
 
 const ITEMS = [
   { href: "/", key: "nav.home", icon: "home" },
-  { href: "/agent", key: "nav.agent", icon: "chat" },
+  { href: "/case", key: "nav.case", icon: "tuition" },
   { href: "/rates", key: "nav.rates", icon: "rates" },
+  { href: "/agent", key: "nav.agent", icon: "chat" },
   { href: "/shield", key: "nav.shield", icon: "shield" },
 ];
 

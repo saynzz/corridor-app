@@ -29,6 +29,11 @@ export function llmConfig() {
   };
 }
 
+export function llmTimeoutMs() {
+  const n = Number(process.env.LLM_TIMEOUT_MS);
+  return Number.isFinite(n) && n > 0 ? n : 60_000;
+}
+
 export async function chat(messages: Msg[], tools: ToolDef[]): Promise<LlmReply> {
   const cfg = llmConfig();
   if (cfg.provider === "mock") {
@@ -49,7 +54,7 @@ export async function chat(messages: Msg[], tools: ToolDef[]): Promise<LlmReply>
       temperature: 0.2,
       stream: false,
     }),
-    signal: AbortSignal.timeout(180_000),
+    signal: AbortSignal.timeout(llmTimeoutMs()),
   });
   if (!res.ok) {
     const t = await res.text();

@@ -24,14 +24,14 @@ export function useCountUp(target: number, ms = 900) {
   return v;
 }
 
-export function useLiveRate(base = "SGD", quote = "KZT", everyMs = 3000) {
-  const [r, setR] = useState<{ rate: number; prev: number; avg: number } | null>(null);
+export function useLiveRate(base = "SGD", quote = "IDR", everyMs = 3000) {
+  const [r, setR] = useState<{ rate: number; prev: number; avg: number; source?: string } | null>(null);
   useEffect(() => {
     let alive = true;
     const tick = () =>
       fetch(`/api/rates?base=${base}&quote=${quote}&live=1`)
         .then((x) => x.json())
-        .then((j) => alive && setR((old) => ({ rate: j.live, prev: old?.rate ?? j.live, avg: j.avg })))
+        .then((j) => alive && setR((old) => ({ rate: j.live, prev: old?.rate ?? j.live, avg: j.avg, source: j.source })))
         .catch(() => {});
     tick();
     const id = setInterval(tick, everyMs);

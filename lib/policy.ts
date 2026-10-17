@@ -1,3 +1,4 @@
+import { checkCredential } from "./session";
 import crypto from "node:crypto";
 import { audit, id, load, mutate } from "./store";
 import { fmt, midRate, quoteRoutes, round2 } from "./fx";
@@ -16,6 +17,8 @@ export const TOOL_TIERS: Record<string, 0 | 1 | 2 | 3> = {
   set_rate_alert: 1,
   propose_conversion: 2,
   propose_payment: 3,
+  get_tuition_case: 0,
+  what_if_reserve: 0,
 };
 
 const DRAFT_TTL_MIN = 30;
@@ -140,6 +143,10 @@ export async function proposePayment(
   checks.push({ code: "payee_saved", label: "Payee is saved in your account", ok: !!payee, detail: payee ? payee.name : `Unknown payee id "${args.payeeId}"` });
   if (!payee) return block(s, "propose_payment", "Payee not found — new payees can only be added by you in the app, never from chat", checks, 3);
 
+  if (payee.kind === "university") {
+    checks.push({ code: "via_case", label: "Tuition is paid through the verified tuition case", ok: false });
+    return block(s, "propose_payment", "Tuition payments must go through the verified tuition case", checks, 3);
+  }
   const currency = (args.currency || payee.currency) as Currency;
   const amount = Number(args.amount);
   checks.push({ code: "payee_verified", label: "Payee verified", ok: payee.verified, detail: payee.verifiedVia });
@@ -233,7 +240,7 @@ export async function executeDraft(draftId: string, token: string, pin?: string,
   }
   if (!sameToken(token, signDraft(d))) return fail("Invalid confirmation token (draft was modified or token forged)", "bad_token");
   const bioOk = biometric && process.env.DEMO_BIOMETRIC !== "0";
-  if (d.tier === 3 && !bioOk && (pin || "") !== (process.env.DEMO_PIN || "2468")) return fail("Wrong PIN", "wrong_pin");
+  if (d.tier === 3 && !bioOk && !checkCredential("student", pin || "")) return fail("Wrong PIN", "wrong_pin");
 
   if (d.kind === "convert") {
     const p = d.payload as ConvertPayload;

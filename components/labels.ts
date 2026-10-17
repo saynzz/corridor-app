@@ -20,6 +20,7 @@ export function reasonLabel(reason: string, t: T) {
   if (/flagged untrusted content/i.test(reason)) return t("reason.tainted");
   if (/Payee not found/i.test(reason)) return t("reason.no_payee");
   if (/checks failed/i.test(reason)) return t("reason.checks");
+  if (/tuition case/i.test(reason)) return t("reason.case");
   return reason;
 }
 

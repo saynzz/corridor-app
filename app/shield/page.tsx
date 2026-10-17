@@ -5,7 +5,17 @@ import { Nav } from "@/components/Nav";
 import { Icon } from "@/components/Icon";
 import { useI18n } from "@/components/i18n";
 
-interface Entry { id: string; at: string; actor: string; action: string; tier?: number; outcome: string; detail: string }
+interface Entry { id: string; at: string; actor: string; action: string; tier?: number; outcome: string; detail: string; hash?: string }
+interface Anchor { height: number; at: string; provider: string; root: string; count: number; reason: string; status: string; txHash?: string; blockNumber?: number; error?: string }
+interface Integrity {
+  ok: boolean;
+  provider: string;
+  ledgerOk: boolean;
+  anchoredRootsMissing: number;
+  chain: { ok: boolean; length: number; head: string; brokenAt?: { id: string; reason: string; index: number } };
+  anchors: Anchor[];
+}
+const short = (h?: string) => (h ? h.slice(0, 8) + "…" + h.slice(-4) : "—");
 
 const TIERS = [
   { t: "T0 · READ", k: "tier.t0", c: "var(--sky)" },
@@ -17,9 +27,13 @@ const TIERS = [
 
 export default function Shield() {
   const [log, setLog] = useState<Entry[] | null>(null);
+  const [integ, setInteg] = useState<Integrity | null>(null);
   const router = useRouter();
   const { t, toast } = useI18n();
-  const refresh = () => fetch("/api/audit").then((r) => r.json()).then((j) => setLog(j.audit));
+  const refresh = () => {
+    fetch("/api/audit").then((r) => r.json()).then((j) => setLog(j.audit)).catch(() => {});
+    fetch("/api/audit/verify").then((r) => r.json()).then(setInteg).catch(() => {});
+  };
   useEffect(() => {
     refresh();
     const id = setInterval(refresh, 4000);
@@ -66,6 +80,40 @@ export default function Shield() {
           </button>
         </div>
 
+        {integ && (
+          <section className={`card pad enter ${integ.ok ? "" : "warn"}`} style={{ display: "flex", flexDirection: "column", gap: 6, animationDelay: "150ms" }}>
+            <div className="between">
+              <div className="eyebrow">{t("chain.title")}</div>
+              <span className={`chip ${integ.chain.ok ? "" : "warn"}`} style={integ.chain.ok ? { color: "var(--lime)" } : {}}>{integ.chain.ok ? t("chain.intact") : t("chain.broken")}</span>
+            </div>
+            <div className="muted" style={{ fontSize: 12 }}>{t("chain.sub")}</div>
+            <div className="mono" style={{ fontSize: 11, display: "grid", gridTemplateColumns: "auto 1fr", gap: "2px 10px" }}>
+              <span className="faint">{t("chain.entries")}</span><span>{integ.chain.length}</span>
+              <span className="faint">{t("chain.head")}</span><span>{short(integ.chain.head)}</span>
+              {integ.chain.brokenAt && (<><span className="faint">{t("chain.where")}</span><span style={{ color: "var(--warn)" }}>{integ.chain.brokenAt.id} — {integ.chain.brokenAt.reason}</span></>)}
+              <span className="faint">{t("chain.anchor")}</span>
+              <span>
+                {integ.anchors[0]
+                  ? `#${integ.anchors[0].height} · ${integ.anchors[0].status} · ${short(integ.anchors[0].root)}${integ.anchors[0].txHash ? " · tx " + short(integ.anchors[0].txHash) : ""}`
+                  : "—"}
+              </span>
+              <span className="faint">{t("chain.provider")}</span>
+              <span>{integ.provider === "webase" ? "FISCO BCOS · WeBASE-Front" : t("chain.local")}</span>
+            </div>
+            <button
+              className="btn small"
+              style={{ alignSelf: "flex-start" }}
+              onClick={async () => {
+                const r = await fetch("/api/anchor", { method: "POST" }).then((x) => x.json()).catch(() => null);
+                toast(r?.ok ? t("chain.anchored") : t("chain.anchorFail"));
+                refresh();
+              }}
+            >
+              {t("chain.anchorNow")}
+            </button>
+          </section>
+        )}
+
         <section className="enter" style={{ display: "flex", flexDirection: "column", gap: 8, animationDelay: "180ms" }}>
           <div className="between">
             <div className="eyebrow">{t("shield.audit")}</div>
@@ -82,7 +130,7 @@ export default function Shield() {
                       {e.outcome.toUpperCase()} · {e.action}
                       {e.tier !== undefined ? ` · T${e.tier}` : ""}
                     </span>
-                    <span className="faint">{new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · {e.actor}</span>
+                    <span className="faint">{new Date(e.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · {e.actor}{e.hash ? ` · #${e.hash.slice(0, 6)}` : ""}</span>
                   </div>
                   <div style={{ fontSize: 13, color: "var(--text-2)", wordBreak: "break-word" }}>{e.detail}</div>
                 </div>

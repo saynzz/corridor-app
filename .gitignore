@@ -7,3 +7,10 @@ reports/runs
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+data/case
+data/issuer
+data/verifier
+data/uploads
+data/ledger.json
+.env.bak-*
+reports/evidence/data

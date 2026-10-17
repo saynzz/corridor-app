@@ -1,0 +1,13 @@
+node_modules
+.next
+.env
+.env.local
+data/*.json
+data/case
+data/issuer
+data/verifier
+data/uploads
+reports/runs
+*.tsbuildinfo
+.git
+.DS_Store

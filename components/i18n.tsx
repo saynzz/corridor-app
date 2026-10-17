@@ -76,6 +76,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <I18n.Provider value={value}>
+      <div className="simbar" role="status">● {t("sim.banner")}</div>
       {children}
       <div className="toasts" aria-live="polite">
         {toasts.map((x) => (

@@ -17,10 +17,10 @@ export default function RatesPage() {
   const [open, setOpen] = useState<string | null>(null);
   const router = useRouter();
   const { t } = useI18n();
-  const live = useLiveRate("SGD", "KZT", 2500);
+  const live = useLiveRate("SGD", "IDR", 2500);
 
   useEffect(() => {
-    fetch("/api/rates?base=SGD&quote=KZT").then((x) => x.json()).then(setR);
+    fetch("/api/rates?base=SGD&quote=IDR").then((x) => x.json()).then(setR);
     fetch("/api/state").then((x) => x.json()).then(setS);
   }, []);
 
@@ -53,13 +53,13 @@ export default function RatesPage() {
             <div>
               <div className="muted" style={{ fontSize: 13 }}>{t("rates.per")}</div>
               <div className="row" style={{ gap: 10, alignItems: "baseline" }}>
-                <div key={cur.toFixed(2)} className="mono fade" style={{ fontSize: 30, fontWeight: 500, marginTop: 2 }}>{r ? cur.toFixed(2) : "—"}</div>
-                {live && <span className={`mono ${delta <= 0 ? "up" : "down"}`} style={{ fontSize: 12 }}>{delta <= 0 ? "▼" : "▲"} {Math.abs(delta).toFixed(2)}</span>}
+                <div key={Math.round(cur)} className="mono fade" style={{ fontSize: 30, fontWeight: 500, marginTop: 2 }}>{r ? Math.round(cur).toLocaleString("en-US") : "—"}</div>
+                {live && <span className={`mono ${delta <= 0 ? "up" : "down"}`} style={{ fontSize: 12 }}>{delta <= 0 ? "▼" : "▲"} {Math.abs(delta).toFixed(1)}</span>}
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
               {r && <span className={`chip ${better ? "lime" : "warn"}`}>{better ? t("rates.better") : t("rates.worse")}</span>}
-              <span className="row mono faint" style={{ fontSize: 11, gap: 6 }}><span className="live-dot" />{t("rates.live")}</span>
+              <span className="row mono faint" style={{ fontSize: 11, gap: 6 }}><span className={live?.source === "sample" ? "" : "live-dot"} style={live?.source === "sample" ? { width: 6, height: 6, borderRadius: "50%", background: "var(--warn)" } : {}} />{live?.source === "sample" ? t("rates.sample") : `${t("rates.live")} · ${live?.source ?? ""}`}</span>
             </div>
           </div>
           <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="30-day exchange rate trend">
@@ -74,12 +74,12 @@ export default function RatesPage() {
           </svg>
           <div className="between mono faint" style={{ fontSize: 10 }}>
             <span>{r?.points[0]?.date.slice(5)}</span>
-            <span>{r ? t("rates.avg", { n: r.avg.toFixed(1) }) : ""}</span>
+            <span>{r ? t("rates.avg", { n: Math.round(r.avg).toLocaleString("en-US") }) : ""}</span>
             <span>{t("today")}</span>
           </div>
           <div className="between" style={{ paddingTop: 10, borderTop: "1px solid var(--line-soft)", fontSize: 13 }}>
             <span>{alert ? t("rates.alertAt", { sign: alert.direction === "below" ? "≤" : "≥", n: alert.threshold }) : t("rates.noAlert")}</span>
-            <button className="btn small primary" onClick={() => router.push("/agent?q=" + encodeURIComponent(t("q.alert", { n: r ? Math.floor(r.current - 3) : 388 })))}>
+            <button className="btn small primary" onClick={() => router.push("/agent?q=" + encodeURIComponent(t("q.alert", { n: r ? Math.floor((r.current - 100) / 50) * 50 : 12100 })))}>
               {alert ? t("rates.change") : t("rates.set")}
             </button>
           </div>

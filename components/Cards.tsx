@@ -5,6 +5,7 @@ import { COIN, money, sym, type Cur } from "./format";
 import { useI18n } from "./i18n";
 import { checkLabel, flagLabel, reasonLabel, routeLabel } from "./labels";
 import type { Card, ConvertPayload, PaymentPayload } from "@/lib/types";
+import { StateChip, idr, sgd } from "./caseui";
 
 export function AgentCard({ card, index = 0 }: { card: Card; index?: number }) {
   const { t } = useI18n();
@@ -138,6 +139,36 @@ export function AgentCard({ card, index = 0 }: { card: Card; index?: number }) {
       return (
         <div className="card sky pad row enter" style={{ ...style, fontSize: 14 }}>
           <Icon name="bell" color="var(--sky)" /> {card.text}
+        </div>
+      );
+    case "case":
+      return (
+        <div className="card lime pad enter" style={{ ...style, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="between">
+            <span className="eyebrow" style={{ color: "var(--lime)" }}>{t("home.caseTitle")}{card.whatIf ? " · what-if" : ""}</span>
+            {card.obligation && <span className="mono" style={{ fontSize: 13 }}>{sgd(card.obligation.amount)}</span>}
+          </div>
+          {card.obligation && <div className="mono faint" style={{ fontSize: 11 }}>{card.obligation.reference} · {t("case.due")} {card.obligation.dueDate} SGT</div>}
+          {!card.whatIf && (
+            <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
+              {["document", "plan", "funding", "transfer", "posting"].filter((k) => k in card.status).map((k) => <StateChip key={k} value={String(card.status[k])} label={`${k}: ${String(card.status[k]).replace(/_/g, " ")}`} />)}
+            </div>
+          )}
+          {card.funding && (
+            <div className="mono" style={{ fontSize: 12, display: "grid", gridTemplateColumns: "1fr auto", gap: 2 }}>
+              <span className="muted">{t("case.reserve")}</span><span>{sgd(card.funding.reserve)}</span>
+              <span className="muted">{t("case.contribution")}</span><span>{sgd(card.funding.contribution)}</span>
+              <span className="muted">{t("case.topup")}</span><span>{sgd(card.funding.topup)}</span>
+            </div>
+          )}
+          {(card.routes ?? []).map((r) => (
+            <div key={r.routeId} className="row" style={{ fontSize: 12, gap: 6, alignItems: "flex-start" }}>
+              <Icon name={r.feasible ? "check" : "x"} size={14} color={r.feasible ? "var(--lime)" : "var(--warn)"} stroke={2.4} />
+              <span>{r.routeId} · {r.name} · {idr(r.debitIdr)} → {sgd(r.netSgd)}{r.reason ? ` · ${r.reason}` : ""}</span>
+            </div>
+          ))}
+          {card.next && <div style={{ fontSize: 13, color: "var(--text-2)" }}>{card.next}</div>}
+          <Link href="/case" className="btn primary small" style={{ alignSelf: "flex-start" }}>{t("home.continue")}</Link>
         </div>
       );
     case "credit":

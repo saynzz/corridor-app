@@ -8,6 +8,7 @@ import { COIN, money, num, sym, type Cur } from "@/components/format";
 import { useI18n } from "@/components/i18n";
 import { useCountUp, useLiveRate } from "@/components/hooks";
 import { draftSummary, txTitle } from "@/components/labels";
+import { CaseCard } from "@/components/CaseCard";
 
 interface State {
   profile: { name: string; homeCity: string; studyCountry: string };
@@ -36,8 +37,6 @@ export default function Home() {
 
   const h = new Date().getHours();
   const greet = t(h < 12 ? "greet.morning" : h < 18 ? "greet.afternoon" : "greet.evening");
-  const due = s?.bills.find((b) => b.status === "due" && b.id === "b_tuition") ?? s?.bills.find((b) => b.status === "due");
-  const daysLeft = due ? Math.max(0, Math.ceil((Date.parse(due.dueDate) - Date.now()) / 864e5)) : 0;
   const first = s?.profile.name.split(" ")[0] ?? "";
   const [whole, cents] = total.toFixed(2).split(".");
   const go = (q: string) => router.push("/agent?q=" + encodeURIComponent(q));
@@ -78,10 +77,10 @@ export default function Home() {
           )}
           {rate && (
             <div className="ticker fade">
-              <span className="live-dot" />
-              ₸{rate.rate.toFixed(2)} / S$1
-              <span className={delta <= 0 ? "up" : "down"}>{delta <= 0 ? "▼" : "▲"} {Math.abs(delta).toFixed(2)}</span>
-              <span className="faint">{t("rates.live")}</span>
+              <span className={rate.source === "sample" ? "" : "live-dot"} style={rate.source === "sample" ? { width: 6, height: 6, borderRadius: "50%", background: "var(--warn)" } : {}} />
+              Rp{Math.round(rate.rate).toLocaleString("en-US")} / S$1
+              <span className={delta <= 0 ? "up" : "down"}>{delta <= 0 ? "▼" : "▲"} {Math.abs(delta).toFixed(1)}</span>
+              <span className="faint">{rate.source === "sample" ? t("rates.sample") : t("rates.live")}</span>
             </div>
           )}
         </section>
@@ -91,11 +90,11 @@ export default function Home() {
             { label: "act.send", icon: "send", q: "q.send", primary: true },
             { label: "act.balances", icon: "request", q: "q.balances" },
             { label: "act.convert", icon: "convert", q: "q.convert" },
-            { label: "act.tuition", icon: "tuition", q: "q.tuition" },
+            { label: "act.tuition", icon: "tuition", q: "", href: "/case" },
           ].map((a) => (
             <button
               key={a.label}
-              onClick={() => go(t(a.q))}
+              onClick={() => ("href" in a && a.href ? router.push(a.href) : go(t(a.q)))}
               style={{
                 height: 66,
                 borderRadius: 18,
@@ -154,25 +153,7 @@ export default function Home() {
           </section>
         )}
 
-        {s && due && (
-          <section className="card lime pad enter" style={{ display: "flex", flexDirection: "column", gap: 10, animationDelay: "240ms" }}>
-            <div className="row eyebrow" style={{ color: "var(--lime)", gap: 8 }}>
-              <span className="live-dot" />
-              {t("home.noticed")}
-            </div>
-            <div style={{ fontSize: 15, lineHeight: 1.45 }}>
-              {t(due.id === "b_tuition" ? "home.noticedText" : "home.noticedRent", { title: t("bill." + due.id), amount: money(due.amount, due.currency), days: days(daysLeft) })}
-            </div>
-            <button className="btn primary" style={{ alignSelf: "flex-start" }} onClick={() => go(t(due.id === "b_tuition" ? "q.hero" : "q.rent"))}>
-              {t("home.planIt")} <Icon name="arrowRight" size={14} color="var(--lime-ink)" stroke={2.2} />
-            </button>
-          </section>
-        )}
-        {s && !due && (
-          <section className="card lime pad enter row" style={{ fontSize: 15 }}>
-            <Icon name="check" color="var(--lime)" stroke={2.4} /> {t("home.paidAll")}
-          </section>
-        )}
+        <CaseCard />
 
         {s && (
           <section className="enter" style={{ display: "flex", flexDirection: "column", gap: 8, animationDelay: "300ms" }}>

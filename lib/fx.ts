@@ -1,20 +1,32 @@
 import type { Currency } from "./types";
 
-const SAMPLE_PER_USD: Record<Currency, number> = { USD: 1, SGD: 1.29, KZT: 505, CNY: 7.12 };
+const SAMPLE_PER_USD: Record<Currency, number> = { USD: 1, SGD: 1.29, IDR: 15740, CNY: 7.12 };
 
-let cache: { at: number; perUsd: Record<Currency, number>; live: boolean } | null = null;
+type Cache = { at: number; perUsd: Record<Currency, number>; live: boolean; failedAt?: number };
+const G = globalThis as { __corridorFx?: Cache | null };
 
-export async function perUsd(): Promise<{ perUsd: Record<Currency, number>; live: boolean }> {
-  if (process.env.FX_LIVE !== "1") return { perUsd: SAMPLE_PER_USD, live: false };
-  if (cache && Date.now() - cache.at < 10 * 60 * 1000) return cache;
+export function fxLiveEnabled() {
+  return process.env.FX_LIVE !== "0";
+}
+
+export async function perUsd(): Promise<{ perUsd: Record<Currency, number>; live: boolean; at?: number }> {
+  if (!fxLiveEnabled()) return { perUsd: SAMPLE_PER_USD, live: false };
+  const cache = G.__corridorFx;
+  if (cache?.live && Date.now() - cache.at < 10 * 60 * 1000) return cache;
+  if (cache?.failedAt && Date.now() - cache.failedAt < 2 * 60 * 1000) return cache.live ? cache : { perUsd: SAMPLE_PER_USD, live: false };
   try {
     const r = await fetch("https://open.er-api.com/v6/latest/USD", { signal: AbortSignal.timeout(4000) });
     const j = (await r.json()) as { rates: Record<string, number> };
-    const p = { USD: 1, SGD: j.rates.SGD, KZT: j.rates.KZT, CNY: j.rates.CNY } as Record<Currency, number>;
+    const p = { USD: 1, SGD: j.rates.SGD, IDR: j.rates.IDR, CNY: j.rates.CNY } as Record<Currency, number>;
     if (Object.values(p).some((v) => !v)) throw new Error("missing rate");
-    cache = { at: Date.now(), perUsd: p, live: true };
-    return cache;
+    G.__corridorFx = { at: Date.now(), perUsd: p, live: true };
+    return G.__corridorFx;
   } catch {
+    if (cache?.live && Date.now() - cache.at < 24 * 3600 * 1000) {
+      cache.failedAt = Date.now();
+      return cache;
+    }
+    G.__corridorFx = { at: Date.now(), perUsd: SAMPLE_PER_USD, live: false, failedAt: Date.now() };
     return { perUsd: SAMPLE_PER_USD, live: false };
   }
 }
@@ -69,9 +81,9 @@ export function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-const SYMBOL: Record<Currency, string> = { SGD: "S$", KZT: "₸", USD: "$", CNY: "¥" };
+const SYMBOL: Record<Currency, string> = { SGD: "S$", IDR: "Rp", USD: "$", CNY: "¥" };
 export function fmt(amount: number, c: Currency) {
-  const digits = c === "KZT" ? 0 : 2;
+  const digits = c === "IDR" ? 0 : 2;
   return SYMBOL[c] + amount.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
 export const symbol = (c: Currency) => SYMBOL[c];

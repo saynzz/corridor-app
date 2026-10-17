@@ -13,6 +13,7 @@ interface Item {
   content: string;
   cards?: Card[];
   trace?: { tool: string; status: string }[];
+  mode?: string;
   fresh?: boolean;
 }
 
@@ -119,7 +120,7 @@ function Chat() {
       const j = await r.json();
       const wait = Math.max(0, 1800 - (Date.now() - started));
       await new Promise((res) => setTimeout(res, wait));
-      setItems([...next, { role: "assistant", content: j.reply || j.error || "…", cards: j.cards || [], trace: j.trace || [], fresh: true }]);
+      setItems([...next, { role: "assistant", content: j.reply || j.error || "…", cards: j.cards || [], trace: j.trace || [], mode: j.mode, fresh: true }]);
       if ((j.cards || []).some((c: Card) => c.type === "risk" && c.level !== "low")) vibrate([30, 60, 30]);
     } catch (e) {
       setItems([...next, { role: "assistant", content: "Network error: " + String(e), fresh: true }]);
@@ -132,13 +133,13 @@ function Chat() {
 
   return (
     <div className="shell">
-      <header className="row" style={{ gap: 12, padding: "max(env(safe-area-inset-top), 16px) 16px 12px", borderBottom: "1px solid var(--line-soft)", position: "sticky", top: 0, background: "rgba(7,9,15,.88)", backdropFilter: "blur(12px)", zIndex: 10 }}>
+      <header className="row" style={{ gap: 12, padding: "max(env(safe-area-inset-top), 16px) 16px 12px", borderBottom: "1px solid var(--line-soft)", position: "sticky", top: 22, background: "rgba(7,9,15,.88)", backdropFilter: "blur(12px)", zIndex: 10 }}>
         <Link href="/" className="iconbtn" aria-label="Back"><Icon name="back" /></Link>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 600 }}>{t("agent.title")}</div>
           <div className="row muted" style={{ fontSize: 12, gap: 6 }}>
             <span className={ready ? "live-dot" : ""} style={ready ? {} : { width: 6, height: 6, borderRadius: "50%", background: "var(--warn)" }} />
-            {busy ? t("think.1") : health ? `${health.llm === "mock" ? t("agent.mock") : health.model} · ${t("agent.sandbox")}` : t("agent.sandbox")}
+            {busy ? t("think.1") : health ? (ready ? `${health.llm === "mock" ? t("agent.mock") : health.model} · ${t("agent.sandbox")}` : t("agent.simplified")) : t("agent.sandbox")}
           </div>
         </div>
         <button
@@ -175,6 +176,11 @@ function Chat() {
             <div key={i} className={`bubble-user ${it.fresh ? "enter" : ""}`}>{it.content}</div>
           ) : (
             <div key={i} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {it.mode === "simplified" && (
+                <div className="row" style={{ gap: 6, alignSelf: "flex-start", padding: "4px 10px", borderRadius: 999, border: "1px solid var(--warn)", color: "var(--warn)", fontSize: 11, fontWeight: 600 }} title={t("agent.simplifiedHint")}>
+                  {t("agent.simplified")}
+                </div>
+              )}
               {it.cards?.map((c, k) => <AgentCard key={k} card={c} index={it.fresh ? k : 0} />)}
               <div className={`bubble-agent ${it.fresh ? "enter" : ""}`} style={it.fresh ? { animationDelay: `${(it.cards?.length ?? 0) * 140}ms` } : {}}>
                 {it.fresh ? <Typewriter text={it.content} onTick={scroll} /> : it.content}

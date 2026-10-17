@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { llmConfig } from "@/lib/llm";
+import { simplifiedUntil } from "@/lib/agent";
 
 export const dynamic = "force-dynamic";
 
@@ -15,5 +16,6 @@ export async function GET() {
       llm = "unreachable";
     }
   }
-  return NextResponse.json({ provider: cfg.provider, model: cfg.model, baseUrl: cfg.baseUrl, llm });
+  const until = simplifiedUntil();
+  return NextResponse.json({ provider: cfg.provider, model: cfg.model, baseUrl: cfg.baseUrl, llm, mode: llm === "ok" || llm === "mock" ? "model" : "simplified", simplifiedUntil: until ? new Date(until).toISOString() : null });
 }

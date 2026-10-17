@@ -8,17 +8,17 @@ export function seedState(): BankState {
   return {
     version: 1,
     profile: {
-      name: "Aruzhan Sadykova",
-      homeCountry: "Kazakhstan",
-      homeCity: "Almaty",
+      name: "Putri Rahayu",
+      homeCountry: "Indonesia",
+      homeCity: "Jakarta",
       studyCountry: "Singapore",
       university: "Lion City University",
       baseCurrency: "SGD",
-      homeCurrency: "KZT",
+      homeCurrency: "IDR",
     },
     wallets: [
-      { currency: "SGD", balance: 1120.4, label: "Main · daily spend" },
-      { currency: "KZT", balance: 912000, label: "From family" },
+      { currency: "SGD", balance: 3120.4, label: "Main · daily spend" },
+      { currency: "IDR", balance: 1250000, label: "From family" },
       { currency: "USD", balance: 480, label: "Scholarship" },
       { currency: "CNY", balance: 100, label: "Shenzhen trip" },
     ],
@@ -45,11 +45,11 @@ export function seedState(): BankState {
         addedAt: iso(-55),
       },
       {
-        id: "p_mom",
-        name: "Saule Sadykova (mom)",
+        id: "p_family",
+        name: "Budi Rahayu (father)",
         kind: "family",
-        currency: "KZT",
-        account: "KZ Demo Bank •••• 0912",
+        currency: "IDR",
+        account: "ID Demo Bank •••• 0912",
         verified: true,
         verifiedVia: "Saved family contact",
         addedAt: iso(-90),
@@ -67,16 +67,6 @@ export function seedState(): BankState {
     ],
     bills: [
       {
-        id: "b_tuition",
-        payeeId: "p_uni",
-        title: "Semester 2 tuition",
-        amount: 2000,
-        currency: "SGD",
-        dueDate: date(3),
-        reference: "LCU-2026-S2-48213",
-        status: "due",
-      },
-      {
         id: "b_rent",
         payeeId: "p_landlord",
         title: "November rent",
@@ -89,11 +79,11 @@ export function seedState(): BankState {
     ],
     transactions: [
       {
-        id: "t_mom",
-        at: iso(-0.1),
+        id: "t_family",
+        at: iso(-12),
         kind: "incoming",
-        title: "From Saule Sadykova (mom)",
-        legs: [{ currency: "KZT", amount: 500000 }],
+        title: "From Budi Rahayu (father)",
+        legs: [{ currency: "IDR", amount: 1250000 }],
       },
       {
         id: "t_phone",

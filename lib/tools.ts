@@ -2,9 +2,11 @@ import { load, mutate, audit, id } from "./store";
 import { fmt, midRate, quoteRoutes, round2, toBase } from "./fx";
 import { proposeConversion, proposePayment, scanText, TOOL_TIERS } from "./policy";
 import type { Card, Currency } from "./types";
+import { getCase, notifications, status as caseStatus } from "./case/engine";
+import { funding as caseFunding, quoteRoutes as caseQuotes, evaluateSchemes } from "./case/planner";
 import type { ToolDef } from "./llm";
 
-const CUR = { type: "string", enum: ["SGD", "KZT", "USD", "CNY"] };
+const CUR = { type: "string", enum: ["SGD", "IDR", "USD", "CNY"] };
 
 export const TOOL_DEFS: ToolDef[] = [
   fn("get_balances", "Get the user's wallet balances in every currency and the total in SGD.", {}),
@@ -26,6 +28,17 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   fn("get_credit_plan", "The user's step-by-step plan for building a local credit history.", {}),
   fn(
+    "get_tuition_case",
+    "Status of the verified tuition payment case: obligation, document/plan/funding/transfer/university-posting states, funding split, route decisions with reasons, and who must act next. Use for any question about tuition.",
+    {}
+  ),
+  fn(
+    "what_if_reserve",
+    "Recalculate the tuition funding with a different living reserve (in SGD) WITHOUT changing anything. Shows the family top-up and which routes would be feasible.",
+    { reserve_sgd: { type: "number" } },
+    ["reserve_sgd"]
+  ),
+  fn(
     "present_plan",
     "Show the user a short numbered plan before proposing money movements. Each step has a tier: 0 read, 1 draft, 2 own-wallet conversion, 3 money out.",
     {
@@ -37,7 +50,7 @@ export const TOOL_DEFS: ToolDef[] = [
   ),
   fn(
     "set_rate_alert",
-    "Create a rate alert. threshold is in units of `from` per 1 `to` (e.g. KZT per SGD).",
+    "Create a rate alert. threshold is in units of `from` per 1 `to` (e.g. IDR per SGD).",
     { from: CUR, to: CUR, threshold: { type: "number" }, direction: { type: "string", enum: ["below", "above"] } },
     ["from", "to", "threshold"]
   ),
@@ -78,6 +91,7 @@ export async function runTool(name: string, rawArgs: string, ctx: ToolContext): 
   } catch {
     return { result: { error: "Arguments were not valid JSON" } };
   }
+  args = normalizeArgs(args);
   const tier = TOOL_TIERS[name];
   if (tier === undefined) {
     mutate((s) => audit(s, { actor: "policy", action: name, outcome: "blocked", detail: "Unknown tool requested by model" }));
@@ -151,6 +165,38 @@ export async function runTool(name: string, rawArgs: string, ctx: ToolContext): 
       const s = load();
       return { result: s.credit, card: { type: "credit", steps: s.credit } };
     }
+    case "get_tuition_case": {
+      const c = getCase();
+      if (!c) return { result: { case: null, hint: "No tuition case yet. The student can start one on the Tuition tab." }, card: { type: "case", obligation: null, status: { case: "NONE" }, next: "Start a tuition case on the Tuition tab" } };
+      const st = caseStatus(c);
+      const ns = notifications(c);
+      const f = c.plan?.funding ?? null;
+      const routes = c.quotes.map((q) => ({ routeId: q.routeId, name: q.name, feasible: q.feasible, reason: q.reason, detail: q.detail, debitIdr: q.debitIdr, netSgd: q.netSgd, postingDate: q.postingDate }));
+      return {
+        result: {
+          obligation: c.obligation ? { amount_sgd: c.obligation.amount / 100, reference: c.obligation.reference, due_date_sgt: c.obligation.dueDate } : "not verified yet",
+          states: st,
+          funding_sgd: f ? { reserve: f.reserve / 100, available: f.available / 100, student_contribution: f.contribution / 100, family_topup: f.topup / 100 } : null,
+          routes: routes.map((r) => ({ ...r, netSgd: r.netSgd / 100 })),
+          next_actions: ns.map((n) => `${n.owner}: ${n.action}`),
+          note: "Only the app can approve or execute. Never say it is paid unless posting is POSTED.",
+        },
+        card: { type: "case", obligation: c.obligation ? { amount: c.obligation.amount, reference: c.obligation.reference, dueDate: c.obligation.dueDate } : null, status: st, funding: f, routes, next: ns[0] ? `${ns[0].owner}: ${ns[0].action}` : undefined },
+      };
+    }
+    case "what_if_reserve": {
+      const c = getCase();
+      if (!c || !c.obligation) return { result: { error: "The tuition invoice must be verified first" } };
+      const reserve = Math.max(0, Math.round(Number(args.reserve_sgd) * 100));
+      const f = caseFunding(c.snapshot, { ...c.constraints, reserve }, c.obligation.amount);
+      const qs = f.topup > 0 ? caseQuotes(f.topup, c.constraints.familyLimitIdr, c.obligation.dueDate) : [];
+      const schemes = evaluateSchemes(f, c.obligation.amount, qs, c.constraints.familyLimitIdr);
+      const routes = qs.map((q) => ({ routeId: q.routeId, name: q.name, feasible: q.feasible, reason: q.reason, detail: q.detail, debitIdr: q.debitIdr, netSgd: q.netSgd, postingDate: q.postingDate }));
+      return {
+        result: { reserve_sgd: reserve / 100, available_sgd: f.available / 100, student_contribution_sgd: f.contribution / 100, family_topup_sgd: f.topup / 100, schemes, routes: routes.map((r) => ({ ...r, netSgd: r.netSgd / 100 })), note: "Hypothetical only — nothing changed." },
+        card: { type: "case", obligation: { amount: c.obligation.amount, reference: c.obligation.reference, dueDate: c.obligation.dueDate }, status: caseStatus(c), funding: f, routes, whatIf: true },
+      };
+    }
     case "present_plan": {
       const steps = Array.isArray(args.steps) ? args.steps.slice(0, 6).map((x: Args) => ({ text: String(x.text || ""), tier: Number(x.tier) || 0 })) : [];
       return { result: { shown: true }, card: { type: "plan", title: String(args.title || "Plan"), steps, note: args.note ? String(args.note) : undefined } };
@@ -197,3 +243,25 @@ export async function runTool(name: string, rawArgs: string, ctx: ToolContext): 
 }
 
 export { fmt };
+
+const CUR_ALIAS: Record<string, string> = { RP: "IDR", RUPIAH: "IDR", "S$": "SGD", "SG$": "SGD", "$": "USD", "US$": "USD", RMB: "CNY", YUAN: "CNY" };
+
+function normalizeArgs(a: Args): Args {
+  if (!a || typeof a !== "object" || Array.isArray(a)) return {};
+  const out: Args = { ...a };
+  for (const k of ["amount", "threshold", "reserve_sgd", "limit"]) {
+    const v = out[k];
+    if (typeof v === "string") {
+      const n = Number(v.replace(/[^\d.,-]/g, "").replace(/,(?=\d{3}\b)/g, "").replace(/,/g, "."));
+      if (Number.isFinite(n)) out[k] = n;
+    }
+  }
+  for (const k of ["currency", "from", "to"]) {
+    const v = out[k];
+    if (typeof v === "string") {
+      const u = v.trim().toUpperCase();
+      out[k] = CUR_ALIAS[u] ?? u;
+    }
+  }
+  return out;
+}

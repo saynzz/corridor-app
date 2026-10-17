@@ -1,0 +1,49 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434/v1}
+      LLM_MODEL: ${LLM_MODEL:-qwen3:4b}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-90000}
+      CONFIRM_SECRET: ${CONFIRM_SECRET:-docker-demo-change-me}
+      SESSION_SECRET: ${SESSION_SECRET:-docker-demo-session-change-me}
+      DEMO_PIN: ${DEMO_PIN:-2468}
+      PAYER_PIN: ${PAYER_PIN:-1357}
+      OPERATOR_KEY: ${OPERATOR_KEY:-ops-demo-2026}
+      DEMO_BIOMETRIC: ${DEMO_BIOMETRIC:-1}
+      FX_LIVE: ${FX_LIVE:-1}
+      ANCHOR_PROVIDER: ${ANCHOR_PROVIDER:-local}
+      WEBASE_URL: ${WEBASE_URL:-}
+      ANCHOR_CONTRACT: ${ANCHOR_CONTRACT:-}
+      ANCHOR_SIGN_USER: ${ANCHOR_SIGN_USER:-}
+    volumes:
+      - corridor-data:/app/data
+      - ./reports:/app/reports
+    depends_on:
+      ollama:
+        condition: service_started
+        required: false
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "sleep 3 && ollama pull ${LLM_MODEL:-qwen3:4b}"]
+    restart: "no"
+
+volumes:
+  corridor-data:
+  ollama-models:
