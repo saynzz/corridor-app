@@ -1,12 +1,14 @@
 # Corridor — money that moves with you
 
+**English** · [Русский](README.ru.md)
+
 ## 1. Project Overview
 
 | | |
 |---|---|
 | **Track** | International AI Track |
 | **Topic** | C · Cross-border & Student Finance Assistant |
-| **Team name** | _TEAM NAME_ |
+| **Team name** | FINOVA |
 | **Project name** | Corridor |
 | **One-liner** | An AI money agent that turns an international student's tuition invoice into one verified, family-funded, deadline-safe payment — and never moves money without each owner's confirmation. |
 
@@ -159,6 +161,7 @@ npm run dev                   # http://localhost:3000
 npm run eval                      # full suite with the model from .env
 npm run eval:agent                # only agent tasks and attacks (real-model check)
 LLM_PROVIDER=mock npm run eval    # offline stand-in
+npm run evidence                  # core journey + report → reports/evidence/EXECUTION_EVIDENCE.md
 npm run typecheck
 ```
 
@@ -190,7 +193,7 @@ lib/session.ts       role sessions and credentials
 lib/anchor.ts        ledger anchoring (local / WeBASE-Front)
 lib/case/            tuition case: issuer, verifier, planner, calendar, engine
 contracts/           CorridorAnchor.sol (FISCO BCOS)
-scripts/             eval, reset, check-llm
+scripts/             eval, evidence, reset, check-llm
 ```
 
 ## 7. Security Notes
