@@ -2,6 +2,8 @@
 
 **English** · [Русский](README.ru.md)
 
+![Corridor — screenshots of the working prototype](docs/images/corridor-screens.png)
+
 ## 1. Project Overview
 
 | | |
@@ -24,6 +26,14 @@
 6. **Explains everything in the user's language** — the agent answers in English, Bahasa Indonesia, Russian, Kazakh, Chinese or Vietnamese using read-only tools over the same verified case.
 
 **Innovation.** Deterministic money rules with an AI layer on top: the model understands, plans and explains, while a policy layer — not the model — decides what can move. Tamper-evident audit log anchored to a ledger, simplified mode when the model is down, and a full acceptance test suite runnable with one command.
+
+<details>
+<summary>Early design concept</summary>
+
+![Corridor — early design concept](docs/images/design-concept.png)
+
+The first design concept used a Kazakhstan–Singapore (KZT) scenario. The working prototype above implements the Indonesia–Singapore (IDR) tuition case from our specification.
+</details>
 
 > Sandbox prototype. All people, banks, accounts, the university, invoices, keys and transfer routes are synthetic and labelled **SIMULATION** in the UI. No real money moves.
 
